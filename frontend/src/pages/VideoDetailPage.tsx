@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Sparkles, Play, Plus, Trash2, Download } from 'lucide-react';
@@ -29,13 +29,24 @@ export function VideoDetailPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const [genOpts, setGenOpts] = useState({ targetScenes: 6, tone: 'информативный', avatarId: '', voiceId: '' });
+  const [genOpts, setGenOpts] = useState({ brief: '', targetScenes: 6, tone: 'информативный', avatarId: '', voiceId: '' });
 
   const { data: project, isLoading } = useQuery({
     queryKey: ['project', id],
     queryFn: () => api.get<Project>(`/videos/${id}`),
     refetchInterval: 4000,
   });
+
+  useEffect(() => {
+    if (project) {
+      setGenOpts((prev) => ({
+        ...prev,
+        brief: project.brief || prev.brief || '',
+        avatarId: prev.avatarId || '',
+        voiceId: prev.voiceId || '',
+      }));
+    }
+  }, [project?.id, project?.brief]);
   const { data: avatars } = useQuery({ queryKey: ['avatars'], queryFn: () => api.get<Avatar[]>('/avatars') });
   const { data: voices } = useQuery({ queryKey: ['voices'], queryFn: () => api.get<Voice[]>('/voices') });
 
@@ -87,6 +98,14 @@ export function VideoDetailPage() {
         <Card className="lg:col-span-1">
           <CardContent className="space-y-4 p-5">
             <h3 className="flex items-center gap-2 font-semibold"><Sparkles className="h-4 w-4 text-[var(--primary)]" /> {t('videos.generateScript')}</h3>
+            <Field label={t('videos.brief')} hint={t('videos.briefHint')}>
+              <Textarea
+                value={genOpts.brief}
+                onChange={(e) => setGenOpts({ ...genOpts, brief: e.target.value })}
+                rows={6}
+                placeholder={t('videos.briefPlaceholder')}
+              />
+            </Field>
             <Field label={t('videos.targetScenes')}>
               <Input type="number" value={genOpts.targetScenes} onChange={(e) => setGenOpts({ ...genOpts, targetScenes: +e.target.value })} />
             </Field>
@@ -105,7 +124,7 @@ export function VideoDetailPage() {
                 {voices?.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
               </Select>
             </Field>
-            <Button className="w-full" variant="outline" onClick={() => scriptMut.mutate()} disabled={scriptMut.isPending}>
+            <Button className="w-full" variant="outline" onClick={() => scriptMut.mutate()} disabled={scriptMut.isPending || !genOpts.brief.trim()}>
               {scriptMut.isPending ? <Spinner /> : <><Sparkles className="h-4 w-4" /> {t('videos.generateScript')}</>}
             </Button>
           </CardContent>

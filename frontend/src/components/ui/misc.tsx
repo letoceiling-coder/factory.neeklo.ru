@@ -35,10 +35,11 @@ export function EmptyState({ icon, text }: { icon?: ReactNode; text: string }) {
   );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="block space-y-1.5">
       <span className="text-sm font-medium text-[var(--muted-foreground)]">{label}</span>
+      {hint && <p className="text-xs text-[var(--muted-foreground)]/80">{hint}</p>}
       {children}
     </label>
   );

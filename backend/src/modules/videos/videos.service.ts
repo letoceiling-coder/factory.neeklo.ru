@@ -56,11 +56,18 @@ export class VideosService {
   }
 
   /** Generate script + scenes via OpenRouter and persist scenes. */
-  async generateScript(id: string, opts: { targetScenes?: number; tone?: string; avatarId?: string; voiceId?: string }) {
+  async generateScript(id: string, opts: { brief?: string; targetScenes?: number; tone?: string; avatarId?: string; voiceId?: string }) {
     const project = await this.get(id);
+    const brief = (opts.brief || project.brief || '').trim();
+    if (!brief) throw new BadRequestException('Brief / source text is required for script generation');
+
+    if (opts.brief?.trim() && opts.brief.trim() !== project.brief) {
+      await this.prisma.videoProject.update({ where: { id }, data: { brief: opts.brief.trim() } });
+    }
+
     await this.prisma.videoProject.update({ where: { id }, data: { status: 'scripting' } });
 
-    const prompt = `Бриф: ${project.brief || project.title}\nЯзык: ${project.language}\nЖелаемое число сцен: ${
+    const prompt = `Бриф / исходники:\n${brief}\nЯзык: ${project.language}\nЖелаемое число сцен: ${
       opts.targetScenes || 6
     }\nТон: ${opts.tone || 'информативный'}`;
     const raw = await this.llm.complete(prompt, SCRIPT_SYSTEM, { responseFormat: { type: 'json_object' } });
