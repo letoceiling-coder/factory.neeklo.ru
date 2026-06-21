@@ -133,6 +133,29 @@
       "assembling": "Assembling",
       "ready": "Ready",
       "failed": "Failed"
+    },
+    "sceneStatuses": {
+      "pending": "Waiting for TTS",
+      "tts_done": "Voice done",
+      "rendering": "Rendering avatar",
+      "rendered": "Done",
+      "failed": "Failed"
+    },
+    "generation": {
+      "title": "Video generation in progress",
+      "hint": "TTS and avatar render take 2–5 minutes per scene. Keep this page open — status updates automatically.",
+      "failedHint": "One or more scenes failed. Check avatar and voice settings.",
+      "stepTts": "Voice",
+      "stepAvatar": "Avatar",
+      "stepAssemble": "Assembly",
+      "phaseTts": "Generating voice: {done} of {total}",
+      "phaseAvatar": "Rendering avatars: {done} of {total} done",
+      "phaseAssemble": "Assembling final video…",
+      "failedScenes": "Failed in {count} scenes",
+      "inProgress": "Generating…",
+      "started": "Generation started",
+      "retry": "Retry generation",
+      "failedTitle": "Generation failed"
     }
   },
   "nodeBuilder": {

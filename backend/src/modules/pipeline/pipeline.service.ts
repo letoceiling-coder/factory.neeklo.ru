@@ -75,10 +75,17 @@ export class PipelineService {
     const engine = this.avatarEngine.get(scene.avatar.engine as any);
     await this.prisma.scene.update({ where: { id: sceneId }, data: { status: 'rendering' } });
 
+    let engineAvatarId = scene.avatar.engineAvatarId;
+    if (!engineAvatarId && scene.avatar.kind === 'photo' && sourceImageUrl && scene.avatar.engine === 'heygen') {
+      engineAvatarId = await this.avatarEngine.ensureHeyGenTalkingPhoto(sourceImageUrl);
+      await this.prisma.avatar.update({ where: { id: scene.avatar.id }, data: { engineAvatarId } });
+    }
+
     const providerJobId = await engine.renderClip({
       audioUrl,
-      engineAvatarId: scene.avatar.engineAvatarId,
+      engineAvatarId,
       sourceImageUrl,
+      avatarKind: scene.avatar.kind as 'preset' | 'photo',
       aspectRatio: project?.aspectRatio || '16:9',
       background: scene.background,
     });

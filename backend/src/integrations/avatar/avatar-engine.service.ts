@@ -22,4 +22,8 @@ export class AvatarEngineService {
     if (!engine) throw new Error(`Unknown avatar engine: ${slug}`);
     return engine;
   }
+
+  ensureHeyGenTalkingPhoto(sourceImageUrl: string): Promise<string> {
+    return (this.engines.heygen as HeyGenEngine).createTalkingPhotoFromUrl(sourceImageUrl);
+  }
 }

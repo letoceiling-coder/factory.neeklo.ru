@@ -7,6 +7,8 @@ export interface RenderClipParams {
   engineAvatarId?: string | null;
   /** Presigned URL of a source image (photo avatar), when no engineAvatarId. */
   sourceImageUrl?: string | null;
+  /** preset = HeyGen catalog avatar; photo = talking photo from image. */
+  avatarKind?: 'preset' | 'photo';
   aspectRatio?: string;
   background?: string | null;
 }
