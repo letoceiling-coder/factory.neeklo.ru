@@ -9,6 +9,7 @@ import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog } from '@/components/ui/dialog';
 import { PageHeader, Spinner, EmptyState, Field } from '@/components/ui/misc';
+import { AvatarCardPreview } from '@/components/avatars/AvatarCardPreview';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface Avatar {
@@ -35,7 +36,11 @@ export function AvatarsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
-  const { data: avatars, isLoading } = useQuery({ queryKey: ['avatars'], queryFn: () => api.get<Avatar[]>('/avatars') });
+  const { data: avatars, isLoading } = useQuery({
+    queryKey: ['avatars'],
+    queryFn: () => api.get<Avatar[]>('/avatars'),
+    staleTime: 60_000,
+  });
   const { data: voices } = useQuery({ queryKey: ['voices'], queryFn: () => api.get<Voice[]>('/voices') });
 
   const resetForm = () => {
@@ -145,8 +150,8 @@ export function AvatarsPage() {
           {avatars.map((a) => (
             <Card key={a.id} className="group overflow-hidden">
               <div className="relative aspect-[3/4] bg-[var(--muted)]">
-                {a.previewUrl ? (
-                  <img src={a.previewUrl} alt={a.name} className="h-full w-full object-cover" />
+                {a.sourceImageKey || a.previewUrl ? (
+                  <AvatarCardPreview src={a.previewUrl || `/api/avatars/${a.id}/preview`} alt={a.name} />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
                     <UserSquare2 className="h-12 w-12 text-[var(--muted-foreground)]" />
