@@ -86,7 +86,12 @@
       "custom": "Custom"
     },
     "create": "Create avatar",
-    "uploadPhoto": "Upload photo"
+    "edit": "Edit avatar",
+    "uploadPhoto": "Upload photo",
+    "replacePhoto": "Replace photo",
+    "photoAttached": "Photo uploaded",
+    "uploadFailed": "Failed to upload photo",
+    "incomplete": "Missing photo or engine ID"
   },
   "voices": {
     "title": "Voice Studio",

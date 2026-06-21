@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, UserSquare2, Trash2, Upload } from 'lucide-react';
+import { Plus, UserSquare2, Trash2, Upload, Pencil } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,34 +24,105 @@ interface Avatar {
 }
 interface Voice { id: string; name: string; voiceId: string; }
 
+const emptyForm = { name: '', engine: 'heygen', kind: 'preset' as string };
+
 export function AvatarsPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<any>({ name: '', engine: 'heygen', kind: 'preset' });
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState<any>(emptyForm);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const { data: avatars, isLoading } = useQuery({ queryKey: ['avatars'], queryFn: () => api.get<Avatar[]>('/avatars') });
   const { data: voices } = useQuery({ queryKey: ['voices'], queryFn: () => api.get<Voice[]>('/voices') });
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditId(null);
+    setUploadError('');
+    setUploading(false);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setOpen(true);
+  };
+
+  const openEdit = (a: Avatar) => {
+    setEditId(a.id);
+    setForm({
+      name: a.name,
+      engine: a.engine,
+      kind: a.kind,
+      engineAvatarId: a.engineAvatarId || '',
+      defaultVoiceId: a.defaultVoiceId || '',
+      sourceImageKey: a.sourceImageKey || '',
+      previewUrl: a.previewUrl || '',
+    });
+    setUploadError('');
+    setOpen(true);
+  };
 
   const createMut = useMutation({
     mutationFn: (body: any) => api.post('/avatars', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['avatars'] });
       setOpen(false);
-      setForm({ name: '', engine: 'heygen', kind: 'preset' });
+      resetForm();
     },
   });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: any }) => api.put(`/avatars/${id}`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['avatars'] });
+      setOpen(false);
+      resetForm();
+    },
+  });
+
   const delMut = useMutation({
     mutationFn: (id: string) => api.del(`/avatars/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['avatars'] }),
   });
 
   const uploadPhoto = async (file: File) => {
-    const fd = new FormData();
-    fd.append('file', file);
-    const asset = await api.upload<{ key: string; url: string }>('/assets/upload', fd);
-    setForm((f: any) => ({ ...f, sourceImageKey: asset.key, previewUrl: asset.url, kind: 'photo' }));
+    setUploading(true);
+    setUploadError('');
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const asset = await api.upload<{ key: string; url: string }>('/assets/upload', fd);
+      setForm((f: any) => ({
+        ...f,
+        sourceImageKey: asset.key,
+        previewUrl: asset.url,
+        kind: f.kind === 'preset' ? 'photo' : f.kind,
+      }));
+    } catch (e: any) {
+      setUploadError(e.message || t('avatars.uploadFailed'));
+    } finally {
+      setUploading(false);
+    }
   };
+
+  const needsPhoto = form.kind === 'photo' || form.kind === 'cloned' || form.kind === 'custom';
+  const canSave = form.name && !uploading && (!needsPhoto || form.sourceImageKey || form.engineAvatarId);
+
+  const submit = () => {
+    const body = {
+      ...form,
+      engineAvatarId: form.engineAvatarId || undefined,
+      defaultVoiceId: form.defaultVoiceId || undefined,
+      sourceImageKey: form.sourceImageKey || undefined,
+    };
+    if (editId) updateMut.mutate({ id: editId, body });
+    else createMut.mutate(body);
+  };
+
+  const isPending = createMut.isPending || updateMut.isPending;
 
   return (
     <div>
@@ -59,7 +130,7 @@ export function AvatarsPage() {
         title={t('avatars.title')}
         subtitle={t('avatars.subtitle')}
         action={
-          <Button variant="gradient" onClick={() => setOpen(true)}>
+          <Button variant="gradient" onClick={openCreate}>
             <Plus className="h-4 w-4" /> {t('avatars.new')}
           </Button>
         }
@@ -81,24 +152,41 @@ export function AvatarsPage() {
                     <UserSquare2 className="h-12 w-12 text-[var(--muted-foreground)]" />
                   </div>
                 )}
-                <button
-                  onClick={() => delMut.mutate(a.id)}
-                  className="absolute right-2 top-2 hidden rounded-full bg-black/60 p-1.5 text-white group-hover:block"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                <div className="absolute right-2 top-2 hidden gap-1 group-hover:flex">
+                  <button
+                    onClick={() => openEdit(a)}
+                    className="rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
+                    title={t('common.edit')}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => delMut.mutate(a.id)}
+                    className="rounded-full bg-black/60 p-1.5 text-white hover:bg-red-600"
+                    title={t('common.delete')}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
                 <Badge variant="info" className="absolute left-2 top-2">{a.engine}</Badge>
               </div>
               <CardContent className="p-3">
                 <div className="truncate text-sm font-medium">{a.name}</div>
                 <div className="text-xs text-[var(--muted-foreground)]">{t(`avatars.kinds.${a.kind}`)}</div>
+                {!a.sourceImageKey && !a.engineAvatarId && (
+                  <div className="mt-1 text-xs text-amber-500">{t('avatars.incomplete')}</div>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
 
-      <Dialog open={open} onClose={() => setOpen(false)} title={t('avatars.create')}>
+      <Dialog
+        open={open}
+        onClose={() => { setOpen(false); resetForm(); }}
+        title={editId ? t('avatars.edit') : t('avatars.create')}
+      >
         <div className="space-y-4">
           <Field label={t('common.name')}>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
@@ -121,7 +209,11 @@ export function AvatarsPage() {
             </Field>
           </div>
           <Field label="Engine Avatar ID">
-            <Input value={form.engineAvatarId || ''} onChange={(e) => setForm({ ...form, engineAvatarId: e.target.value })} placeholder="avatar_id / talking_photo_id" />
+            <Input
+              value={form.engineAvatarId || ''}
+              onChange={(e) => setForm({ ...form, engineAvatarId: e.target.value })}
+              placeholder="avatar_id / talking_photo_id"
+            />
           </Field>
           <Field label={t('avatars.defaultVoice')}>
             <Select value={form.defaultVoiceId || ''} onChange={(e) => setForm({ ...form, defaultVoiceId: e.target.value })}>
@@ -130,15 +222,19 @@ export function AvatarsPage() {
             </Select>
           </Field>
           <Field label={t('avatars.sourceImage')}>
-            <label className="flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--border)] p-3 text-sm text-[var(--muted-foreground)] hover:bg-[var(--muted)]">
-              <Upload className="h-4 w-4" />
-              {form.previewUrl ? t('common.edit') : t('avatars.uploadPhoto')}
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+            <label className={`flex cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[var(--border)] p-3 text-sm text-[var(--muted-foreground)] hover:bg-[var(--muted)] ${uploading ? 'opacity-60 pointer-events-none' : ''}`}>
+              {uploading ? <Spinner className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
+              {form.previewUrl ? t('avatars.replacePhoto') : t('avatars.uploadPhoto')}
+              <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
             </label>
-            {form.previewUrl && <img src={form.previewUrl} className="mt-2 h-24 rounded-lg object-cover" />}
+            {uploadError && <p className="mt-1 text-xs text-red-500">{uploadError}</p>}
+            {form.previewUrl && <img src={form.previewUrl} alt="" className="mt-2 h-32 w-full rounded-lg object-cover" />}
+            {form.sourceImageKey && (
+              <p className="mt-1 text-xs text-[var(--muted-foreground)]">{t('avatars.photoAttached')}</p>
+            )}
           </Field>
-          <Button variant="gradient" className="w-full" onClick={() => createMut.mutate(form)} disabled={!form.name || createMut.isPending}>
-            {t('avatars.create')}
+          <Button variant="gradient" className="w-full" onClick={submit} disabled={!canSave || isPending}>
+            {isPending ? <Spinner className="h-4 w-4" /> : (editId ? t('common.save') : t('avatars.create'))}
           </Button>
         </div>
       </Dialog>

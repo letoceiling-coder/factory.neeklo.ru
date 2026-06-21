@@ -86,7 +86,12 @@
       "custom": "Кастом"
     },
     "create": "Создать аватар",
-    "uploadPhoto": "Загрузить фото"
+    "edit": "Редактировать аватар",
+    "uploadPhoto": "Загрузить фото",
+    "replacePhoto": "Заменить фото",
+    "photoAttached": "Фото загружено",
+    "uploadFailed": "Не удалось загрузить фото",
+    "incomplete": "Нет фото или ID движка"
   },
   "voices": {
     "title": "Студия голосов",
