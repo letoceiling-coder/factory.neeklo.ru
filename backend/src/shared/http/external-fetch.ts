@@ -1,3 +1,4 @@
+import { fetch as undiciFetch } from 'undici';
 import { SocksProxyAgent } from 'socks-proxy-agent';
 
 let proxyAgent: SocksProxyAgent | null = null;
@@ -31,7 +32,7 @@ export async function externalFetch(
   if (shouldUseProxy(slug)) {
     const agent = getProxyAgent();
     if (agent) {
-      return fetch(url, { ...init, dispatcher: agent } as RequestInit);
+      return undiciFetch(url, { ...init, dispatcher: agent as any } as any) as unknown as Response;
     }
   }
   return fetch(url, init);
