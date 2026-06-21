@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+**/dist/
+**/build/
+
+# Env
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+
+# Logs
+*.log
+npm-debug.log*
+
+# Prisma
+backend/prisma/*.db
+
+# Media / temp render artifacts
+tmp/
+**/tmp/
+*.tmp
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
+
+# Test
+coverage/
+playwright-report/
+test-results/

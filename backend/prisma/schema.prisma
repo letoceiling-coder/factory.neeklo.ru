@@ -1,0 +1,358 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================================================
+// Auth
+// ===========================================================================
+
+enum UserRole {
+  admin
+  user
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      UserRole @default(user)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  agentSessions AgentSession[]
+
+  @@map("users")
+}
+
+// ===========================================================================
+// Integrations / Providers
+// ===========================================================================
+
+enum ProviderType {
+  llm
+  tts
+  avatar
+  storage
+}
+
+model Provider {
+  id        String       @id @default(uuid())
+  type      ProviderType
+  slug      String       @unique // openrouter | elevenlabs | heygen | hedra | did | selectel
+  label     String
+  apiKeyEnc String? // AES-256-GCM encrypted
+  config    Json?
+  enabled   Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@map("providers")
+}
+
+// ===========================================================================
+// Avatars & Voices
+// ===========================================================================
+
+enum AvatarEngine {
+  heygen
+  hedra
+  did
+}
+
+enum AvatarKind {
+  preset
+  photo
+  cloned
+  custom
+}
+
+enum AvatarStatus {
+  draft
+  processing
+  ready
+  failed
+}
+
+model Avatar {
+  id             String       @id @default(uuid())
+  name           String
+  engine         AvatarEngine @default(heygen)
+  engineAvatarId String? // id of avatar/talk inside provider
+  kind           AvatarKind   @default(preset)
+  sourceImageKey String? // S3 key of source photo
+  previewUrl     String?
+  defaultVoiceId String?
+  status         AvatarStatus @default(ready)
+  tags           String[]     @default([])
+  meta           Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  scenes Scene[]
+
+  @@map("avatars")
+}
+
+model VoiceProfile {
+  id         String   @id @default(uuid())
+  name       String
+  provider   String   @default("elevenlabs")
+  voiceId    String // provider voice id
+  language   String   @default("ru")
+  settings   Json? // stability, similarity_boost, style, speed
+  previewUrl String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("voice_profiles")
+}
+
+// ===========================================================================
+// Video projects & scenes
+// ===========================================================================
+
+enum ProjectStatus {
+  draft
+  scripting
+  generating
+  assembling
+  ready
+  failed
+}
+
+enum SceneStatus {
+  pending
+  tts_done
+  rendering
+  rendered
+  failed
+}
+
+model VideoProject {
+  id            String        @id @default(uuid())
+  title         String
+  brief         String? // user input brief / topic
+  script        String? // full generated script
+  language      String        @default("ru")
+  aspectRatio   String        @default("16:9")
+  status        ProjectStatus @default(draft)
+  finalVideoKey String? // S3 key of final mp4
+  finalVideoUrl String?
+  durationMs    Int?
+  workflowId    String?
+  meta          Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  scenes   Scene[]
+  workflow NodeWorkflow? @relation(fields: [workflowId], references: [id], onDelete: SetNull)
+
+  @@map("video_projects")
+}
+
+model Scene {
+  id         String      @id @default(uuid())
+  projectId  String
+  order      Int
+  text       String
+  avatarId   String?
+  voiceId    String?
+  audioKey   String? // S3 key generated TTS audio
+  clipKey    String? // S3 key avatar clip
+  durationMs Int?
+  status     SceneStatus @default(pending)
+  background String? // S3 key or color
+  meta       Json?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  project VideoProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  avatar  Avatar?      @relation(fields: [avatarId], references: [id], onDelete: SetNull)
+
+  @@unique([projectId, order])
+  @@map("scenes")
+}
+
+// ===========================================================================
+// Node workflow (graph pipeline)
+// ===========================================================================
+
+enum NodeCategory {
+  INPUT
+  AI
+  VOICE
+  AVATAR
+  EDIT
+  ASSEMBLE
+  OUTPUT
+}
+
+model NodeWorkflow {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  viewport    Json? // { x, y, zoom }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  nodes      Node[]
+  edges      NodeEdge[]
+  projects   VideoProject[]
+  executions WorkflowExecution[]
+
+  @@map("node_workflows")
+}
+
+model Node {
+  id         String       @id @default(uuid())
+  workflowId String
+  type       String // slug: input.brief, ai.scriptwriter, voice.tts, avatar.render, ...
+  category   NodeCategory
+  label      String
+  positionX  Float        @default(0)
+  positionY  Float        @default(0)
+  config     Json?
+
+  workflow NodeWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("nodes")
+}
+
+model NodeEdge {
+  id         String  @id @default(uuid())
+  workflowId String
+  source     String // node id
+  target     String // node id
+  sourceHandle String?
+  targetHandle String?
+
+  workflow NodeWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("node_edges")
+}
+
+enum ExecutionStatus {
+  running
+  completed
+  failed
+}
+
+model WorkflowExecution {
+  id         String          @id @default(uuid())
+  workflowId String
+  status     ExecutionStatus @default(running)
+  input      Json?
+  output     Json?
+  trace      Json? // per-node trace
+  error      String?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  workflow NodeWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@map("workflow_executions")
+}
+
+// ===========================================================================
+// Render jobs (queues)
+// ===========================================================================
+
+enum JobType {
+  tts
+  avatar
+  assemble
+}
+
+enum JobStatus {
+  queued
+  active
+  completed
+  failed
+}
+
+model RenderJob {
+  id            String    @id @default(uuid())
+  type          JobType
+  status        JobStatus @default(queued)
+  progress      Int       @default(0)
+  projectId     String?
+  sceneId       String?
+  providerJobId String?
+  input         Json?
+  outputKey     String?
+  error         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([projectId])
+  @@index([status])
+  @@map("render_jobs")
+}
+
+// ===========================================================================
+// Assets (S3 media library)
+// ===========================================================================
+
+enum AssetKind {
+  audio
+  video
+  image
+  other
+}
+
+model Asset {
+  id        String    @id @default(uuid())
+  kind      AssetKind
+  key       String    @unique // S3 key
+  name      String?
+  size      Int?
+  meta      Json? // duration, width, height
+  createdAt DateTime  @default(now())
+
+  @@map("assets")
+}
+
+// ===========================================================================
+// AI Agent
+// ===========================================================================
+
+enum AgentMessageRole {
+  user
+  assistant
+  tool
+  system
+}
+
+model AgentSession {
+  id        String   @id @default(uuid())
+  userId    String?
+  title     String   @default("New session")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages AgentMessage[]
+
+  @@map("agent_sessions")
+}
+
+model AgentMessage {
+  id        String           @id @default(uuid())
+  sessionId String
+  role      AgentMessageRole
+  content   String
+  toolCalls Json? // tool calls requested
+  toolName  String?
+  pending   Boolean          @default(false) // awaiting confirmation
+  createdAt DateTime         @default(now())
+
+  session AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("agent_messages")
+}

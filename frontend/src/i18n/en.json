@@ -1,0 +1,224 @@
+{
+  "app": {
+    "name": "Factory",
+    "tagline": "AI Avatar Video Factory"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "create": "Create",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading…",
+    "search": "Search",
+    "actions": "Actions",
+    "status": "Status",
+    "name": "Name",
+    "language": "Language",
+    "back": "Back",
+    "open": "Open",
+    "close": "Close",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "none": "None",
+    "all": "All",
+    "generate": "Generate",
+    "run": "Run",
+    "preview": "Preview",
+    "empty": "Nothing here yet"
+  },
+  "nav": {
+    "dashboard": "Overview",
+    "avatarStudio": "Avatar Studio",
+    "voiceStudio": "Voice Studio",
+    "videoStudio": "Video Studio",
+    "nodeBuilder": "Node Builder",
+    "agent": "AI Agent",
+    "jobs": "Job Queue",
+    "integrations": "Integrations",
+    "media": "Media Library",
+    "settings": "Settings",
+    "users": "Users",
+    "sections": {
+      "main": "Main",
+      "studio": "Production",
+      "system": "System"
+    }
+  },
+  "auth": {
+    "login": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "welcome": "Welcome back",
+    "subtitle": "Sign in to manage your video factory",
+    "error": "Invalid email or password",
+    "logout": "Log out"
+  },
+  "dashboard": {
+    "title": "Factory Overview",
+    "subtitle": "Real-time state of your video content production",
+    "avatars": "Avatars",
+    "voices": "Voices",
+    "projects": "Projects",
+    "ready": "Ready videos",
+    "jobsActive": "Active jobs",
+    "assets": "Media files",
+    "recentProjects": "Recent projects",
+    "recentJobs": "Recent jobs",
+    "quickStart": "Quick start",
+    "quickStartDesc": "Create a video via the AI agent or node builder"
+  },
+  "avatars": {
+    "title": "Avatar Studio",
+    "subtitle": "Create and manage avatars — as many as you need",
+    "new": "New avatar",
+    "engine": "Engine",
+    "kind": "Kind",
+    "defaultVoice": "Default voice",
+    "preview": "Preview",
+    "tags": "Tags",
+    "sourceImage": "Source photo",
+    "kinds": {
+      "preset": "Preset",
+      "photo": "From photo",
+      "cloned": "Clone",
+      "custom": "Custom"
+    },
+    "create": "Create avatar",
+    "uploadPhoto": "Upload photo"
+  },
+  "voices": {
+    "title": "Voice Studio",
+    "subtitle": "ElevenLabs voices for realistic narration",
+    "new": "New voice",
+    "voiceId": "Voice ID",
+    "catalog": "ElevenLabs catalog",
+    "stability": "Stability",
+    "similarity": "Similarity",
+    "style": "Style",
+    "speed": "Speed",
+    "import": "Import from catalog",
+    "preview": "Play"
+  },
+  "videos": {
+    "title": "Video Studio",
+    "subtitle": "Long-form scripted videos with a talking avatar",
+    "new": "New project",
+    "brief": "Brief / topic",
+    "script": "Script",
+    "scenes": "Scenes",
+    "scene": "Scene",
+    "aspectRatio": "Aspect ratio",
+    "generateScript": "Generate script",
+    "startGeneration": "Start generation",
+    "addScene": "Add scene",
+    "finalVideo": "Final video",
+    "targetScenes": "Scene count",
+    "tone": "Tone",
+    "assignAvatar": "Avatar",
+    "assignVoice": "Voice",
+    "download": "Download",
+    "statuses": {
+      "draft": "Draft",
+      "scripting": "Scripting",
+      "generating": "Generating",
+      "assembling": "Assembling",
+      "ready": "Ready",
+      "failed": "Failed"
+    }
+  },
+  "nodeBuilder": {
+    "title": "Node Builder",
+    "subtitle": "Compose the video generation pipeline from nodes",
+    "new": "New pipeline",
+    "palette": "Node palette",
+    "config": "Node config",
+    "run": "Run (preview)",
+    "save": "Save graph",
+    "selectNode": "Select a node to configure",
+    "trace": "Execution trace",
+    "categories": {
+      "INPUT": "Input",
+      "AI": "AI",
+      "VOICE": "Voice",
+      "AVATAR": "Avatar",
+      "EDIT": "Edit",
+      "ASSEMBLE": "Assemble",
+      "OUTPUT": "Output"
+    }
+  },
+  "agent": {
+    "title": "AI Agent",
+    "subtitle": "Full factory control through conversation",
+    "placeholder": "Describe the video you want to create…",
+    "send": "Send",
+    "newSession": "New session",
+    "thinking": "Agent is thinking…",
+    "confirmTitle": "Confirmation required",
+    "confirmDesc": "The agent wants to run a costly operation",
+    "toolCall": "Tool call",
+    "empty": "Start a conversation with the agent to create a video"
+  },
+  "jobs": {
+    "title": "Job Queue",
+    "subtitle": "Render monitoring: TTS, avatar, assembly",
+    "type": "Type",
+    "progress": "Progress",
+    "queued": "Queued",
+    "active": "Active",
+    "completed": "Completed",
+    "failed": "Failed",
+    "types": {
+      "tts": "TTS",
+      "avatar": "Avatar",
+      "assemble": "Assemble"
+    }
+  },
+  "integrations": {
+    "title": "Integrations",
+    "subtitle": "Connect providers and API keys",
+    "apiKey": "API key",
+    "configured": "Connected",
+    "notConfigured": "Not connected",
+    "enabled": "Enabled",
+    "save": "Save key",
+    "types": {
+      "llm": "LLM",
+      "tts": "TTS",
+      "avatar": "Avatar",
+      "storage": "Storage"
+    }
+  },
+  "media": {
+    "title": "Media Library",
+    "subtitle": "All media files in Selectel S3 storage",
+    "upload": "Upload",
+    "kinds": {
+      "audio": "Audio",
+      "video": "Video",
+      "image": "Images",
+      "other": "Other"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Language, theme and profile",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "language": "Interface language",
+    "profile": "Profile"
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Access management",
+    "new": "New user",
+    "role": "Role",
+    "roles": {
+      "admin": "Administrator",
+      "user": "User"
+    }
+  }
+}
