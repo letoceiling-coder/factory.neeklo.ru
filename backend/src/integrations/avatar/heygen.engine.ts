@@ -15,21 +15,8 @@ export class HeyGenEngine implements AvatarEngine {
 
   /** Register a photo in HeyGen and return talking_photo_id for reuse. */
   async createTalkingPhotoFromUrl(imageUrl: string): Promise<string> {
-    const { apiKey, config } = await this.creds.resolve('heygen');
+    const { apiKey } = await this.creds.resolve('heygen');
     if (!apiKey) throw new Error('HeyGen API key is not configured');
-
-    const viaJson = await externalFetch('heygen', `${config.baseUrl}/v2/talking_photo`, {
-      method: 'POST',
-      headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_url: imageUrl }),
-    });
-    if (viaJson.ok) {
-      const data: any = await viaJson.json();
-      const id = data?.data?.talking_photo_id;
-      if (id) return id;
-    } else {
-      this.logger.warn(`HeyGen v2/talking_photo failed (${viaJson.status}), trying binary upload`);
-    }
 
     const imgRes = await fetch(imageUrl);
     if (!imgRes.ok) throw new Error(`Failed to fetch avatar photo (${imgRes.status})`);
@@ -43,11 +30,13 @@ export class HeyGenEngine implements AvatarEngine {
     });
     if (!uploadRes.ok) {
       const t = await uploadRes.text();
-      throw new Error(`HeyGen talking photo upload failed: ${uploadRes.status} ${t}`);
+      this.logger.error(`HeyGen talking photo upload ${uploadRes.status}: ${t}`);
+      throw new Error(`HeyGen talking photo upload failed: ${uploadRes.status}`);
     }
     const uploadData: any = await uploadRes.json();
     const id = uploadData?.data?.talking_photo_id;
     if (!id) throw new Error('HeyGen did not return talking_photo_id');
+    this.logger.log(`HeyGen talking photo registered: ${id}`);
     return id;
   }
 
@@ -95,7 +84,13 @@ export class HeyGenEngine implements AvatarEngine {
     if (!res.ok) {
       const t = await res.text();
       this.logger.error(`HeyGen render error ${res.status}: ${t}`);
-      throw new Error(`HeyGen render failed: ${res.status}`);
+      let detail = t.slice(0, 200);
+      try {
+        detail = JSON.parse(t)?.error?.message || detail;
+      } catch {
+        /* ignore */
+      }
+      throw new Error(`HeyGen render failed: ${detail}`);
     }
     const data: any = await res.json();
     const id = data?.data?.video_id;
