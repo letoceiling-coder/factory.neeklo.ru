@@ -13,13 +13,12 @@ import {
   Node,
   useReactFlow,
 } from '@xyflow/react';
-import { Save, Play, GripVertical } from 'lucide-react';
+import { Save, Play, GripVertical, LayoutTemplate } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Spinner } from '@/components/ui/misc';
 import { WorkflowNode, CATEGORY_COLORS } from './WorkflowNode';
+import { NodeConfigPanel } from './NodeConfigPanel';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface PaletteItem { type: string; category: string; label: string; description: string; defaultConfig?: any; }
@@ -86,6 +85,26 @@ function Inner({ workflowId }: { workflowId: string }) {
     setSelected((s) => (s ? { ...s, data: { ...s.data, config: { ...(s.data as any).config, [key]: value } } } : s));
   };
 
+  const loadFullTemplate = async () => {
+    setBusy(true);
+    try {
+      const wf = await api.post<WorkflowData>(`/workflows/${workflowId}/load-template`, { templateId: 'full' });
+      setNodes(
+        wf.nodes.map((n) => ({
+          id: n.id,
+          type: 'workflowNode',
+          position: { x: n.positionX, y: n.positionY },
+          data: { label: n.label, category: n.category, nodeType: n.type, config: n.config || {} },
+        })),
+      );
+      setEdges(wf.edges.map((e) => ({ id: e.id, source: e.source, target: e.target })));
+      setSelected(null);
+      setTrace(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const save = async () => {
     setBusy(true);
     try {
@@ -128,6 +147,8 @@ function Inner({ workflowId }: { workflowId: string }) {
   }, [palette]);
 
   const selConfig = (selected?.data as any)?.config || {};
+  const selType = (selected?.data as any)?.nodeType || '';
+  const selLabel = (selected?.data as any)?.label || '';
 
   return (
     <div className="flex h-[calc(100vh-9rem)] gap-3">
@@ -159,6 +180,9 @@ function Inner({ workflowId }: { workflowId: string }) {
       {/* Canvas */}
       <div className="relative flex-1 overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)]" ref={wrapperRef}>
         <div className="absolute right-3 top-3 z-10 flex gap-2">
+          <Button size="sm" variant="outline" onClick={loadFullTemplate} disabled={busy} title={t('nodeBuilder.loadFullTemplateHint')}>
+            <LayoutTemplate className="h-4 w-4" /> {t('nodeBuilder.loadFullTemplate')}
+          </Button>
           <Button size="sm" variant="outline" onClick={save} disabled={busy}><Save className="h-4 w-4" /> {t('nodeBuilder.save')}</Button>
           <Button size="sm" variant="gradient" onClick={run} disabled={busy}>{busy ? <Spinner className="h-4 w-4" /> : <Play className="h-4 w-4" />} {t('nodeBuilder.run')}</Button>
         </div>
@@ -196,27 +220,20 @@ function Inner({ workflowId }: { workflowId: string }) {
       </div>
 
       {/* Config */}
-      <div className="w-64 shrink-0 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-4">
+      <div className="w-80 shrink-0 overflow-y-auto rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--card)] p-4">
         <div className="mb-3 text-xs font-semibold uppercase text-[var(--muted-foreground)]">{t('nodeBuilder.config')}</div>
         {!selected ? (
-          <p className="text-sm text-[var(--muted-foreground)]">{t('nodeBuilder.selectNode')}</p>
-        ) : (
-          <div className="space-y-3">
-            <div className="text-sm font-medium">{(selected.data as any).label}</div>
-            {Object.entries(selConfig).map(([key, value]) => (
-              <label key={key} className="block space-y-1">
-                <span className="text-xs text-[var(--muted-foreground)]">{key}</span>
-                {typeof value === 'string' && value.length > 40 ? (
-                  <Textarea value={value as string} onChange={(e) => updateSelectedConfig(key, e.target.value)} rows={3} />
-                ) : (
-                  <Input
-                    value={value as any}
-                    onChange={(e) => updateSelectedConfig(key, typeof value === 'number' ? Number(e.target.value) : e.target.value)}
-                  />
-                )}
-              </label>
-            ))}
+          <div className="space-y-3 text-sm text-[var(--muted-foreground)]">
+            <p>{t('nodeBuilder.selectNode')}</p>
+            <p className="text-xs leading-relaxed">{t('nodeBuilder.howItWorks')}</p>
           </div>
+        ) : (
+          <NodeConfigPanel
+            nodeType={selType}
+            label={selLabel}
+            config={selConfig}
+            onChange={updateSelectedConfig}
+          />
         )}
       </div>
     </div>

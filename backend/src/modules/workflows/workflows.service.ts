@@ -9,6 +9,7 @@ import {
   collectUpstreamOutput,
 } from './graph-engine';
 import { NODE_TEMPLATES } from './node-templates';
+import { buildGraphFromTemplate, listPipelineTemplates } from './pipeline-templates';
 
 @Injectable()
 export class WorkflowsService {
@@ -19,6 +20,22 @@ export class WorkflowsService {
 
   palette() {
     return NODE_TEMPLATES;
+  }
+
+  templates() {
+    return listPipelineTemplates();
+  }
+
+  async loadTemplate(id: string, templateId: string) {
+    const graph = buildGraphFromTemplate(templateId);
+    if (!graph) throw new BadRequestException(`Unknown template: ${templateId}`);
+    return this.saveGraph(id, graph);
+  }
+
+  async createFromTemplate(data: { name: string; templateId: string; description?: string }) {
+    const wf = await this.create({ name: data.name, description: data.description });
+    await this.loadTemplate(wf.id, data.templateId);
+    return this.findOne(wf.id);
   }
 
   list() {

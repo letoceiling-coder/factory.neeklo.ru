@@ -22,6 +22,16 @@ export class WorkflowsController {
     return this.service.palette();
   }
 
+  @Get('templates')
+  templates() {
+    return this.service.templates();
+  }
+
+  @Post('from-template')
+  createFromTemplate(@Body() body: { name: string; templateId: string; description?: string }) {
+    return this.service.createFromTemplate(body);
+  }
+
   @Get()
   list() {
     return this.service.list();
@@ -40,6 +50,11 @@ export class WorkflowsController {
   @Put(':id/graph')
   saveGraph(@Param('id') id: string, @Body() dto: SaveGraphDto) {
     return this.service.saveGraph(id, dto);
+  }
+
+  @Post(':id/load-template')
+  loadTemplate(@Param('id') id: string, @Body() body: { templateId: string }) {
+    return this.service.loadTemplate(id, body.templateId);
   }
 
   @Post(':id/preview')

@@ -36,18 +36,18 @@ export const NODE_TEMPLATES: NodeTemplate[] = [
     description: 'Audio-driven клип с синхроном губ',
     defaultConfig: { engine: 'heygen', avatarId: '' },
   },
-  { type: 'edit.caption', category: 'EDIT', label: 'Субтитры', description: 'Выжигание субтитров', defaultConfig: { enabled: true } },
-  { type: 'edit.background', category: 'EDIT', label: 'Фон', description: 'Цвет/изображение фона', defaultConfig: { value: '#0a0a0f' } },
-  { type: 'edit.music', category: 'EDIT', label: 'Музыка', description: 'Фоновая музыка', defaultConfig: { assetKey: '', volume: 0.15 } },
-  { type: 'edit.transition', category: 'EDIT', label: 'Переход', description: 'Переход между сценами', defaultConfig: { kind: 'fade' } },
+  { type: 'edit.caption', category: 'EDIT', label: 'Субтитры', description: 'Выжигание субтитров', defaultConfig: { enabled: true, style: 'bottom' } },
+  { type: 'edit.background', category: 'EDIT', label: 'Фон', description: 'Цвет/изображение фона', defaultConfig: { type: 'color', value: '#0a0a0f' } },
+  { type: 'edit.music', category: 'EDIT', label: 'Музыка', description: 'Фоновая музыка', defaultConfig: { enabled: false, assetKey: '', volume: 0.15 } },
+  { type: 'edit.transition', category: 'EDIT', label: 'Переход', description: 'Переход между сценами', defaultConfig: { kind: 'fade', durationSec: 0.5 } },
   {
     type: 'assemble.timeline',
     category: 'ASSEMBLE',
     label: 'Сборка (FFmpeg)',
     description: 'Монтаж клипов в единый таймлайн',
-    defaultConfig: { withCaptions: false },
+    defaultConfig: { withCaptions: false, aspectRatio: '16:9' },
   },
-  { type: 'output.video', category: 'OUTPUT', label: 'Готовое видео', description: 'Финальный MP4 в хранилище', defaultConfig: {} },
+  { type: 'output.video', category: 'OUTPUT', label: 'Готовое видео', description: 'Финальный MP4 в хранилище', defaultConfig: { format: 'mp4', quality: 'high' } },
 ];
 
 export const CATEGORY_COLORS: Record<string, string> = {

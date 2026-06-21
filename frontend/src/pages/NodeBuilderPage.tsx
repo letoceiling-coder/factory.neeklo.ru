@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Workflow, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Workflow, Trash2, ArrowLeft, LayoutTemplate } from 'lucide-react';
 import { api } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,14 @@ export function NodeBuilderPage() {
     mutationFn: () => api.post<WF>('/workflows', { name }),
     onSuccess: (wf) => { qc.invalidateQueries({ queryKey: ['workflows'] }); setOpen(false); setName(''); setActive(wf.id); },
   });
+  const createFullMut = useMutation({
+    mutationFn: () => api.post<WF & { nodes?: unknown[] }>('/workflows/from-template', {
+      name: 'Полный пайплайн',
+      templateId: 'full',
+      description: 'Все узлы: бриф → сценарий → озвучка → аватар → монтаж → MP4',
+    }),
+    onSuccess: (wf) => { qc.invalidateQueries({ queryKey: ['workflows'] }); setActive(wf.id); },
+  });
   const delMut = useMutation({ mutationFn: (id: string) => api.del(`/workflows/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ['workflows'] }) });
 
   if (active) {
@@ -42,7 +50,14 @@ export function NodeBuilderPage() {
       <PageHeader
         title={t('nodeBuilder.title')}
         subtitle={t('nodeBuilder.subtitle')}
-        action={<Button variant="gradient" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> {t('nodeBuilder.new')}</Button>}
+        action={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => createFullMut.mutate()} disabled={createFullMut.isPending}>
+              <LayoutTemplate className="h-4 w-4" /> {t('nodeBuilder.newFull')}
+            </Button>
+            <Button variant="gradient" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> {t('nodeBuilder.new')}</Button>
+          </div>
+        }
       />
 
       {isLoading ? (
