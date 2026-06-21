@@ -1,6 +1,9 @@
 import {
+  BadRequestException,
   Controller,
   Get,
+  InternalServerErrorException,
+  Logger,
   Param,
   Post,
   Query,
@@ -20,6 +23,8 @@ function kindOf(mime: string): 'audio' | 'video' | 'image' | 'other' {
 
 @Controller('assets')
 export class AssetsController {
+  private readonly logger = new Logger(AssetsController.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly s3: S3Service,
@@ -47,10 +52,20 @@ export class AssetsController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async upload(@UploadedFile() file: any) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('File is required');
+    }
     const kind = kindOf(file.mimetype);
     const ext = (file.originalname.split('.').pop() || 'bin').toLowerCase();
-    const key = `uploads/${kind}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    await this.s3.upload(key, file.buffer, file.mimetype);
+    const key = `factory/uploads/${kind}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    try {
+      await this.s3.upload(key, file.buffer, file.mimetype);
+    } catch (err: any) {
+      this.logger.error(`S3 upload failed for ${key}: ${err?.message || err}`);
+      throw new InternalServerErrorException(
+        'Storage upload failed. Check Selectel S3 credentials and bucket permissions.',
+      );
+    }
     const asset = await this.prisma.asset.create({
       data: { kind, key, name: file.originalname, size: file.size },
     });
