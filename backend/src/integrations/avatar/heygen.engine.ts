@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { ProviderCredentialsService } from '../provider-credentials.service';
+import { externalFetch } from '../../shared/http/external-fetch';
 import { AvatarEngine, RenderClipParams, RenderStatus } from './avatar-engine.interface';
 
 /**
@@ -22,7 +23,7 @@ export class HeyGenEngine implements AvatarEngine {
 
     const [w, h] = (params.aspectRatio || '16:9') === '9:16' ? [720, 1280] : [1280, 720];
 
-    const res = await fetch(`${config.baseUrl}/v2/video/generate`, {
+    const res = await externalFetch('heygen', `${config.baseUrl}/v2/video/generate`, {
       method: 'POST',
       headers: { 'X-Api-Key': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -51,7 +52,7 @@ export class HeyGenEngine implements AvatarEngine {
 
   async getStatus(providerJobId: string): Promise<RenderStatus> {
     const { apiKey, config } = await this.creds.resolve('heygen');
-    const res = await fetch(`${config.baseUrl}/v1/video_status.get?video_id=${providerJobId}`, {
+    const res = await externalFetch('heygen', `${config.baseUrl}/v1/video_status.get?video_id=${providerJobId}`, {
       headers: { 'X-Api-Key': apiKey! },
     });
     if (!res.ok) return { status: 'processing' };

@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { ProviderCredentialsService } from '../provider-credentials.service';
+import { externalFetch } from '../../shared/http/external-fetch';
 import { AvatarEngine, RenderClipParams, RenderStatus } from './avatar-engine.interface';
 
 /**
@@ -21,7 +22,7 @@ export class DidEngine implements AvatarEngine {
     const { apiKey, config } = await this.creds.resolve('did');
     if (!apiKey) throw new Error('D-ID API key is not configured');
 
-    const res = await fetch(`${config.baseUrl}/talks`, {
+    const res = await externalFetch('did', `${config.baseUrl}/talks`, {
       method: 'POST',
       headers: { Authorization: this.authHeader(apiKey), 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -42,7 +43,7 @@ export class DidEngine implements AvatarEngine {
 
   async getStatus(providerJobId: string): Promise<RenderStatus> {
     const { apiKey, config } = await this.creds.resolve('did');
-    const res = await fetch(`${config.baseUrl}/talks/${providerJobId}`, {
+    const res = await externalFetch('did', `${config.baseUrl}/talks/${providerJobId}`, {
       headers: { Authorization: this.authHeader(apiKey!) },
     });
     if (!res.ok) return { status: 'processing' };

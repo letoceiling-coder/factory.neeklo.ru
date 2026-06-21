@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { ProviderCredentialsService } from '../provider-credentials.service';
+import { externalFetch } from '../../shared/http/external-fetch';
 import { AvatarEngine, RenderClipParams, RenderStatus } from './avatar-engine.interface';
 
 /**
@@ -16,7 +17,7 @@ export class HedraEngine implements AvatarEngine {
     const { apiKey, config } = await this.creds.resolve('hedra');
     if (!apiKey) throw new Error('Hedra API key is not configured');
 
-    const res = await fetch(`${config.baseUrl}/v1/projects`, {
+    const res = await externalFetch('hedra', `${config.baseUrl}/v1/projects`, {
       method: 'POST',
       headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -39,7 +40,7 @@ export class HedraEngine implements AvatarEngine {
 
   async getStatus(providerJobId: string): Promise<RenderStatus> {
     const { apiKey, config } = await this.creds.resolve('hedra');
-    const res = await fetch(`${config.baseUrl}/v1/projects/${providerJobId}`, {
+    const res = await externalFetch('hedra', `${config.baseUrl}/v1/projects/${providerJobId}`, {
       headers: { 'X-API-KEY': apiKey! },
     });
     if (!res.ok) return { status: 'processing' };

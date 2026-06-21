@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ProviderCredentialsService } from '../provider-credentials.service';
+import { externalFetch } from '../../shared/http/external-fetch';
 
 export interface TtsOptions {
   voiceId: string;
@@ -26,7 +27,7 @@ export class ElevenLabsService {
   async listVoices(): Promise<VoiceInfo[]> {
     const { apiKey, config } = await this.creds.resolve('elevenlabs');
     if (!apiKey) throw new Error('ElevenLabs API key is not configured');
-    const res = await fetch(`${config.baseUrl}/v1/voices`, {
+    const res = await externalFetch('elevenlabs', `${config.baseUrl}/v1/voices`, {
       headers: { 'xi-api-key': apiKey },
     });
     if (!res.ok) throw new Error(`ElevenLabs voices failed: ${res.status}`);
@@ -44,7 +45,7 @@ export class ElevenLabsService {
     const { apiKey, config } = await this.creds.resolve('elevenlabs');
     if (!apiKey) throw new Error('ElevenLabs API key is not configured');
 
-    const res = await fetch(`${config.baseUrl}/v1/text-to-speech/${options.voiceId}`, {
+    const res = await externalFetch('elevenlabs', `${config.baseUrl}/v1/text-to-speech/${options.voiceId}`, {
       method: 'POST',
       headers: {
         'xi-api-key': apiKey,
